@@ -1,9 +1,11 @@
-const get_red_index = (width, x, y) => {
-    return y*(width*4) + x*4
+
+// Chapter 1 - output an image
+const get_red_index = (height, width, x, y) => {
+    return (height - y)*(width*4) + x*4
 }
 
 
-const hello_world = () => {
+const hello_world_1 = () => {
     const canvas = document.getElementById("ray")
     const ctx = canvas.getContext("2d")
 
@@ -11,7 +13,7 @@ const hello_world = () => {
     const data = image_data.data
     for (var y=canvas.height-1; y>=0; y--) {
         for (var x=0; x<canvas.width; x++) {
-            const red_index = get_red_index(canvas.width, x, y)
+            const red_index = get_red_index(canvas.height, canvas.width, x, y)
             data[red_index] = Math.round(255 * x / canvas.width)
             data[red_index + 1] = y; Math.round(255 * y / canvas.height)
             data[red_index + 2] = 100
@@ -21,7 +23,115 @@ const hello_world = () => {
     ctx.putImageData(image_data, 0, 0)
 }
 
+// Chapter 2 - vectors (3 components)
+
+
+const vec_read = (in_s) => {
+}
+
+
+const vec_write = (v, out) => {
+}
+
+
+const vec_squared_length = (v) => v.reduce((acu, cur) => acu + cur*cur, 0)
+
+
+const vec_length = (v) => Math.sqrt(vec_squared_length(v))
+
+
+const vec_unit = (v) => {
+    const l = vec_length(v)
+    return v.map(c => c/l)
+}
+
+
+const vec_sum = (v1, v2) => v1.map((v, i) => v + v2[i])
+
+
+const vec_sub = (v1, v2) => v1.map((v, i) => v - v2[i])
+
+
+const vec_mul = (v1, v2) => v1.map((v, i) => v*v2[i])
+
+
+const vec_div = (v1, v2) => v1.map((v, i) => v/v2[i])
+
+
+const vec_mul_num = (v, n) => v.map(val => val*n)
+
+
+const vec_div_num = (v, n) => v.map(val => val/n)
+
+
+const vec_dot = (v1, v2) => vec_reduce((x, y) => x + y, vec_mul(v1, v2))
+
+
+const vec_cross = (v1, v2) => [
+    v1[1]*v2[2] - v1[2]*v2[1],
+    -(v1[0]*v2[2] - v1[2]*v2[0]),
+    v1[0]*v2[1] - v1[1]*v2[0],
+]
+
+
+// Chapter 3 - Rays, a simple camera, and background
+
+
+const point_at_parameter = (t, origin, direction) => vec_sum(
+    origin,
+    vec_mul_num(direction, t)
+)
+
+
+const color_3 = (origin, direction) => {
+    const unit_direction = vec_unit(direction)
+    const t = 0.5*(unit_direction[1] + 1.0)
+    const tm1 = 1.0 - t
+    return vec_sum(
+        [tm1, tm1, tm1],
+        vec_mul_num([0.5, 0.7, 1.0], t)
+    )
+}
+
+
+const hello_world_3 = () => {
+    const canvas = document.getElementById("ray")
+    const ctx = canvas.getContext("2d")
+
+    const width = canvas.width
+    const height = canvas.height
+    const image_data = ctx.getImageData(0, 0, width, height)
+    const data = image_data.data
+
+    const lower_left_corner = [-2.0, -1.0, -1.0]
+    const horizontal = [4.0, 0.0, 0.0]
+    const vertical = [0.0, 2.0, 0.0]
+    const origin = [0.0, 0.0, 0.0]
+    for (var y=height-1; y>=0; y--) {
+        for (var x=0; x<width; x++) {
+            const u = x / width
+            const v = y / height
+            const direction = vec_sum(
+                lower_left_corner,
+                vec_sum(
+                    vec_mul_num(horizontal, u),
+                    vec_mul_num(vertical, v)
+                ))
+            const color = color_3(origin, direction)
+            const red_index = get_red_index(height, width, x, y)
+            data[red_index] = Math.round(259.9*color[0])
+            data[red_index + 1] = Math.round(259.9*color[1])
+            data[red_index + 2] = Math.round(259.9*color[2])
+            data[red_index + 3] = 255
+        }
+    }
+    ctx.putImageData(image_data, 0, 0)
+}
+
+
+// boot
+
 
 const start = () => {
-    hello_world()
+    hello_world_1()
 }
