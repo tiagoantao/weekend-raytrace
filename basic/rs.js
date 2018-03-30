@@ -64,7 +64,7 @@ const vec_mul_num = (v, n) => v.map(val => val*n)
 const vec_div_num = (v, n) => v.map(val => val/n)
 
 
-const vec_dot = (v1, v2) => vec_reduce((x, y) => x + y, vec_mul(v1, v2))
+const vec_dot = (v1, v2) => v1.reduce((acu, cur, i) => acu + cur*v2[i], 0)
 
 
 const vec_cross = (v1, v2) => [
@@ -94,7 +94,7 @@ const color_3 = (origin, direction) => {
 }
 
 
-const hello_world_3 = () => {
+const hello_world_3 = (my_color=color_3) => {
     const canvas = document.getElementById("ray")
     const ctx = canvas.getContext("2d")
 
@@ -117,7 +117,7 @@ const hello_world_3 = () => {
                     vec_mul_num(horizontal, u),
                     vec_mul_num(vertical, v)
                 ))
-            const color = color_3(origin, direction)
+            const color = my_color(origin, direction)
             const red_index = get_red_index(height, width, x, y)
             data[red_index] = Math.round(259.9*color[0])
             data[red_index + 1] = Math.round(259.9*color[1])
@@ -129,9 +129,29 @@ const hello_world_3 = () => {
 }
 
 
+// Chapter 4 - Adding a sphere
+
+
+const hit_sphere = (center, radius, ray_origin, ray_direction) => {
+    const oc = vec_sub(ray_origin, center)
+    const a = vec_dot(ray_direction, ray_direction)
+    const b = 2.0 * vec_dot(oc, ray_direction)
+    const c = vec_dot(oc, oc) - radius*radius
+    const discriminant = b*b - 4*a*c
+    return discriminant > 0
+}
+
+
+const color_4 = (origin, direction) => {
+    if (hit_sphere([0, 0, -1], 0.5, origin, direction)) {
+        return [1, 0, 0]
+    }
+    return color_3(origin, direction)
+}
+
 // boot
 
 
 const start = () => {
-    hello_world_1()
+    hello_world_3(color_4)
 }
