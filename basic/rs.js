@@ -160,19 +160,20 @@ const color_4 = (ray) => {
 }
 
 
-// Chapter 5 - Surface Normals and multiple objects
+// Chapter 5 - Part 1 Surface Normals
 
 
 const hit_sphere_5 = (sphere, ray) => {
     const discriminant = compute_discriminant(sphere, ray)
     return discriminant.discriminant < 0 ?
-        -1.0 :
+        -1.0
+        :
         (-discriminant.b - Math.sqrt(discriminant.discriminant)) / (
             2.0*discriminant.a)
 }
 
 
-const color_5 = (ray) => {
+const color_5_1 = (ray) => {
     const t1 = hit_sphere_5(z_sphere, ray)
     if (t1 > 0.0) {
         const N = vec_unit(
@@ -181,18 +182,95 @@ const color_5 = (ray) => {
                 [0, 0, -1]))
         return vec_mul_num([N[0]+1, N[1]+1, N[2]+1], 0.5)
     }
+    /*
     const unit_direction = vec_unit(ray.direction)
     const t2 = 0.5 * (unit_direction[1] + 1.0)
     return vec_sum(
         vec_mul_num([1, 1, 1], (1 - t2)),
         vec_mul_num([0.5, 0.7, 1.0], t2))
+    */
+    return color_3(ray)
+}
+
+
+// Chapter 5 - Part 2 Multiple objects
+
+//Poor human polymorphism
+const poly_hit = (obj, ray, tmin, tmax) => {
+    if (obj instanceof Array) {
+        return list_hit(obj, ray, tmin, tmax)
+    }
+    return sphere_hit(obj, ray, tmin, tmax)
+}
+
+const sphere_hit = (sphere, ray, tmin, tmax) => {
+    const d = compute_discriminant(sphere, ray)
+    if (d <= 0) return false
+    const temp1 = (-d.b - Math.sqrt(d.b*d.b - 4*d.a*d.c)) / (2*d.a)
+    if (temp1 < tmax && temp1 > tmin) {
+        const p = point_at_parameter(temp1, ray)
+        return {
+            t: temp1,
+            p,
+            normal: vec_div_num(
+                vec_sub(p, sphere.center),
+                sphere.radius
+            )
+        }
+    }
+
+    const temp2 = (-d.b + Math.sqrt(d.b*d.b - 4*d.a*d.c)) / (2*d.a)
+    if (temp2 < tmax && temp2 > tmin) {
+        const p = point_at_parameter(temp2, ray)
+        return {
+            t: temp2,
+            p,
+            normal: vec_div_num(
+                vec_sub(p, sphere.center),
+                sphere.radius
+            )
+        }
+    }
+    
+    return false
+}
+
+
+const list_hit = (list, ray, tmin, tmax) => {
+    let temp_rec = false
+    let closest_so_far = tmax
+    for (let elem of list) {
+        const erec = poly_hit(elem, ray, tmin, closest_so_far)
+        if (erec) {
+            closest_so_far = erec.t
+            temp_rec = erec
+        }
+    }
+    return temp_rec
+}
+
+const color_5_2 = (ray, world) => {
+    const rec = list_hit(world, ray, 0.0, Number.MAX_VALUE)
+    return rec?
+        vec_mul_num(
+            [rec.normal[0]+1, rec.normal[1]+1, rec.normal[2]+1],
+            0.5)
+        :
+        color_3(ray)
 }
 
 // boot
 
 
+const world = [
+    {center: [0, 0, -1], radius: 0.5},
+    {center: [0, -100.5, -1], radius: 100}
+]
+
 const start = () => {
     //hello_world_3(color_3)
     //hello_world_3(color_4)
-    hello_world_3(color_5)
+    //hello_world_3(color_5_1)
+
+    hello_world_3((ray) => color_5_2(ray, world))
 }
