@@ -132,23 +132,28 @@ const hello_world_3 = (my_color=color_3) => {
 
 // Chapter 4 - Adding a sphere
 
-const compute_discriminant = (center, radius, ray) => {
-    const oc = vec_sub(ray.origin, center)
+const z_sphere = {
+    center: [0, 0, -1],
+    radius: 0.5
+}
+
+const compute_discriminant = (sphere, ray) => {
+    const oc = vec_sub(ray.origin, sphere.center)
     const a = vec_dot(ray.direction, ray.direction)
     const b = 2.0 * vec_dot(oc, ray.direction)
-    const c = vec_dot(oc, oc) - radius*radius
+    const c = vec_dot(oc, oc) - sphere.radius*sphere.radius
     const discriminant = b*b - 4*a*c
     return {a, b, c, discriminant}
 }
 
 
-const hit_sphere_4 = (center, radius, ray) => {
-    return compute_discriminant(center, radius, ray).discriminant > 0
+const hit_sphere_4 = (sphere, ray) => {
+    return compute_discriminant(sphere, ray).discriminant > 0
 }
 
 
 const color_4 = (ray) => {
-    if (hit_sphere_4([0, 0, -1], 0.5, ray)) {
+    if (hit_sphere_4(z_sphere, ray)) {
         return [1, 0, 0]
     }
     return color_3(ray)
@@ -158,8 +163,8 @@ const color_4 = (ray) => {
 // Chapter 5 - Surface Normals and multiple objects
 
 
-const hit_sphere_5 = (center, radius, ray) => {
-    const discriminant = compute_discriminant(center, radius, ray)
+const hit_sphere_5 = (sphere, ray) => {
+    const discriminant = compute_discriminant(sphere, ray)
     return discriminant.discriminant < 0 ?
         -1.0 :
         (-discriminant.b - Math.sqrt(discriminant.discriminant)) / (
@@ -168,7 +173,7 @@ const hit_sphere_5 = (center, radius, ray) => {
 
 
 const color_5 = (ray) => {
-    const t1 = hit_sphere_5([0, 0, -1], 0.5, ray)
+    const t1 = hit_sphere_5(z_sphere, ray)
     if (t1 > 0.0) {
         const N = vec_unit(
             vec_sub(
