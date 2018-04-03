@@ -131,23 +131,30 @@ const hello_world_3 = (my_color=color_3) => {
 
 // Chapter 4 - Adding a sphere
 
-
-const hit_sphere = (center, radius, ray_origin, ray_direction) => {
+const compute_discriminant = (center, radius, ray_origin, ray_direction) => {
     const oc = vec_sub(ray_origin, center)
     const a = vec_dot(ray_direction, ray_direction)
     const b = 2.0 * vec_dot(oc, ray_direction)
     const c = vec_dot(oc, oc) - radius*radius
     const discriminant = b*b - 4*a*c
-    return discriminant > 0
+    return discriminant
+}
+
+
+const hit_sphere_4 = (center, radius, ray_origin, ray_direction) => {
+    return compute_discriminant(center, radius, ray_origin, ray_direction) > 0
 }
 
 
 const color_4 = (origin, direction) => {
-    if (hit_sphere([0, 0, -1], 0.5, origin, direction)) {
+    if (hit_sphere_4([0, 0, -1], 0.5, origin, direction)) {
         return [1, 0, 0]
     }
     return color_3(origin, direction)
 }
+
+// Chapter 5 - Surface Normals and multiple objects
+
 
 // boot
 
