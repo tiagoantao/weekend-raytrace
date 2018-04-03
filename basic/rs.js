@@ -77,14 +77,14 @@ const vec_cross = (v1, v2) => [
 // Chapter 3 - Rays, a simple camera, and background
 
 
-const point_at_parameter = (t, origin, direction) => vec_sum(
-    origin,
-    vec_mul_num(direction, t)
+const point_at_parameter = (t, ray) => vec_sum(
+    ray.origin,
+    vec_mul_num(ray.direction, t)
 )
 
 
-const color_3 = (origin, direction) => {
-    const unit_direction = vec_unit(direction)
+const color_3 = (ray) => {
+    const unit_direction = vec_unit(ray.direction)
     const t = 0.5*(unit_direction[1] + 1.0)
     const tm1 = 1.0 - t
     return vec_sum(
@@ -117,7 +117,8 @@ const hello_world_3 = (my_color=color_3) => {
                     vec_mul_num(horizontal, u),
                     vec_mul_num(vertical, v)
                 ))
-            const color = my_color(origin, direction)
+            const ray = {origin, direction}
+            const color = my_color(ray)
             const red_index = get_red_index(height, width, x, y)
             data[red_index] = Math.round(259.9*color[0])
             data[red_index + 1] = Math.round(259.9*color[1])
@@ -131,36 +132,34 @@ const hello_world_3 = (my_color=color_3) => {
 
 // Chapter 4 - Adding a sphere
 
-const compute_discriminant = (center, radius, ray_origin, ray_direction) => {
-    const oc = vec_sub(ray_origin, center)
-    const a = vec_dot(ray_direction, ray_direction)
-    const b = 2.0 * vec_dot(oc, ray_direction)
+const compute_discriminant = (center, radius, ray) => {
+    const oc = vec_sub(ray.origin, center)
+    const a = vec_dot(ray.direction, ray.direction)
+    const b = 2.0 * vec_dot(oc, ray.direction)
     const c = vec_dot(oc, oc) - radius*radius
     const discriminant = b*b - 4*a*c
     return {a, b, c, discriminant}
 }
 
 
-const hit_sphere_4 = (center, radius, ray_origin, ray_direction) => {
-    return compute_discriminant(
-        center, radius, ray_origin, ray_direction).discriminant > 0
+const hit_sphere_4 = (center, radius, ray) => {
+    return compute_discriminant(center, radius, ray).discriminant > 0
 }
 
 
-const color_4 = (origin, direction) => {
-    if (hit_sphere_4([0, 0, -1], 0.5, origin, direction)) {
+const color_4 = (ray) => {
+    if (hit_sphere_4([0, 0, -1], 0.5, ray)) {
         return [1, 0, 0]
     }
-    return color_3(origin, direction)
+    return color_3(ray)
 }
 
 
 // Chapter 5 - Surface Normals and multiple objects
 
 
-const hit_sphere_5 = (center, radius, ray_origin, ray_direction) => {
-    const discriminant = compute_discriminant(
-        center, radius, ray_origin, ray_direction)
+const hit_sphere_5 = (center, radius, ray) => {
+    const discriminant = compute_discriminant(center, radius, ray)
     return discriminant.discriminant < 0 ?
         -1.0 :
         (-discriminant.b - Math.sqrt(discriminant.discriminant)) / (
@@ -168,16 +167,16 @@ const hit_sphere_5 = (center, radius, ray_origin, ray_direction) => {
 }
 
 
-const color_5 = (origin, direction) => {
-    const t1 = hit_sphere_5([0, 0, -1], 0.5, origin, direction)
+const color_5 = (ray) => {
+    const t1 = hit_sphere_5([0, 0, -1], 0.5, ray)
     if (t1 > 0.0) {
         const N = vec_unit(
             vec_sub(
-                point_at_parameter(t1, origin, direction),
+                point_at_parameter(t1, ray),
                 [0, 0, -1]))
         return vec_mul_num([N[0]+1, N[1]+1, N[2]+1], 0.5)
     }
-    const unit_direction = vec_unit(direction)
+    const unit_direction = vec_unit(ray.direction)
     const t2 = 0.5 * (unit_direction[1] + 1.0)
     return vec_sum(
         vec_mul_num([1, 1, 1], (1 - t2)),
@@ -188,5 +187,7 @@ const color_5 = (origin, direction) => {
 
 
 const start = () => {
+    //hello_world_3(color_3)
+    //hello_world_3(color_4)
     hello_world_3(color_5)
 }
