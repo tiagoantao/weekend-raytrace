@@ -137,12 +137,13 @@ const compute_discriminant = (center, radius, ray_origin, ray_direction) => {
     const b = 2.0 * vec_dot(oc, ray_direction)
     const c = vec_dot(oc, oc) - radius*radius
     const discriminant = b*b - 4*a*c
-    return discriminant
+    return {a, b, c, discriminant}
 }
 
 
 const hit_sphere_4 = (center, radius, ray_origin, ray_direction) => {
-    return compute_discriminant(center, radius, ray_origin, ray_direction) > 0
+    return compute_discriminant(
+        center, radius, ray_origin, ray_direction).discriminant > 0
 }
 
 
@@ -153,12 +154,39 @@ const color_4 = (origin, direction) => {
     return color_3(origin, direction)
 }
 
+
 // Chapter 5 - Surface Normals and multiple objects
 
+
+const hit_sphere_5 = (center, radius, ray_origin, ray_direction) => {
+    const discriminant = compute_discriminant(
+        center, radius, ray_origin, ray_direction)
+    return discriminant.discriminant < 0 ?
+        -1.0 :
+        (-discriminant.b - Math.sqrt(discriminant.discriminant)) / (
+            2.0*discriminant.a)
+}
+
+
+const color_5 = (origin, direction) => {
+    const t1 = hit_sphere_5([0, 0, -1], 0.5, origin, direction)
+    if (t1 > 0.0) {
+        const N = vec_unit(
+            vec_sub(
+                point_at_parameter(t1, origin, direction),
+                [0, 0, -1]))
+        return vec_mul_num([N[0]+1, N[1]+1, N[2]+1], 0.5)
+    }
+    const unit_direction = vec_unit(direction)
+    const t2 = 0.5 * (unit_direction[1] + 1.0)
+    return vec_sum(
+        vec_mul_num([1, 1, 1], (1 - t2)),
+        vec_mul_num([0.5, 0.7, 1.0], t2))
+}
 
 // boot
 
 
 const start = () => {
-    hello_world_3(color_4)
+    hello_world_3(color_5)
 }
