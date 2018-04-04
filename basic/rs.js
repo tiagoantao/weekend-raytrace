@@ -274,10 +274,11 @@ const simple_camera = {
 const get_ray = (camera, u, v) => {
     const direction = vec_sum(
         camera.lower_left_corner,
-        vec_sum(
-            vec_mul_num(camera.horizontal, u),
-            vec_mul_num(camera.vertical, v)
-        ))
+        vec_sub(
+            vec_sum(
+                vec_mul_num(camera.horizontal, u),
+                vec_mul_num(camera.vertical, v)),
+            camera.origin))
     const ray = {origin: camera.origin, direction}
     return ray
 }
@@ -461,7 +462,7 @@ const scatter_dielectric = (ri, ray_in, rec) => {
 
 // Chapter 10 - Positionable camera
 
-const standard_camera = (vfov, aspect) => {
+const fov_camera = (vfov, aspect) => {
     const theta = vfov * Math.PI / 180
     const half_height = Math.tan(theta/2)
     const half_width = aspect * half_height
@@ -470,6 +471,26 @@ const standard_camera = (vfov, aspect) => {
         horizontal: [2*half_width, 0.0, 0.0],
         vertical: [0.0, 2*half_height, 0.0],
         origin:  [0.0, 0.0, 0.0]
+    }
+}
+
+
+const standard_camera = (look_from, look_at, vup, vfov, aspect) => {
+    const theta = vfov * Math.PI / 180
+    const half_height = Math.tan(theta/2)
+    const half_width = aspect * half_height
+    const w = vec_unit(vec_sub(look_from, look_at))
+    const u = vec_unit(vec_cross(vup, w))
+    const v = vec_cross(w, u)
+    return {
+        lower_left_corner:
+        vec_sub(look_from,
+                vec_sum(vec_mul_num(u, half_width),
+                        vec_sum(vec_mul_num(v, half_height),
+                                w))),
+        horizontal: vec_mul_num(u, 2*half_width),
+        vertical: vec_mul_num(v, 2*half_height),
+        origin:  look_from
     }
 }
 
@@ -507,7 +528,7 @@ const world_dielectric = [
 ]
 
 const _R = Math.cos(Math.PI / 4)
-const world_camera_1 = [
+const world_camera = [
     {center: [-_R, 0, -1], radius: _R,
      mat: {mat: 'lambertian', albedo: [0, 0, 01]}},
     {center: [_R, 0, -1], radius: _R,
@@ -541,6 +562,12 @@ const start = () => {
     const ctx = canvas.getContext("2d")
     const width = canvas.width
     const height = canvas.height
-    hello_world_6('ray1', standard_camera(90, width/height), 20, (ray) => color_8(ray, world_camera_1))
     
+    //hello_world_6('ray1', fov_camera(90, width/height), 20, (ray) => color_8(ray, world_camera))
+
+    hello_world_6('ray1',
+                  standard_camera([-2, 2, 1], [0, 0, -1],
+                                  [0, 1, 0],
+                                  90, width/height),  // 90 or 40
+                  20, (ray) => color_8(ray, world_dielectric))
 }
