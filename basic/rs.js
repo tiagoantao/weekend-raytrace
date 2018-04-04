@@ -283,7 +283,8 @@ const get_ray = (camera, u, v) => {
     return ray
 }
 
-const hello_world_6 = (canvas_id, camera, num_samples, my_color) => {
+const hello_world_6 = (canvas_id, camera, num_samples, my_color,
+                      my_ray=get_ray) => {
     const canvas = document.getElementById(canvas_id)
     const ctx = canvas.getContext("2d")
 
@@ -299,7 +300,7 @@ const hello_world_6 = (canvas_id, camera, num_samples, my_color) => {
                 const u = (x + Math.random()) / width
                 const v = (y + Math.random()) / height
             
-                const ray = get_ray(camera, u, v)
+                const ray = my_ray(camera, u, v)
                 color = vec_sum(my_color(ray), color)
 
             }
@@ -475,7 +476,7 @@ const fov_camera = (vfov, aspect) => {
 }
 
 
-const standard_camera = (look_from, look_at, vup, vfov, aspect) => {
+const moveable_camera = (look_from, look_at, vup, vfov, aspect) => {
     const theta = vfov * Math.PI / 180
     const half_height = Math.tan(theta/2)
     const half_width = aspect * half_height
@@ -490,9 +491,66 @@ const standard_camera = (look_from, look_at, vup, vfov, aspect) => {
                                 w))),
         horizontal: vec_mul_num(u, 2*half_width),
         vertical: vec_mul_num(v, 2*half_height),
-        origin:  look_from
+        origin: look_from
     }
 }
+
+
+// Chapter 11 - Defocus blur
+
+
+const complete_camera = (
+    look_from, look_at, vup, vfov, aspect, aperture, focus_dist) => {
+        const lens_radius = aperture / 2
+        const theta = vfov * Math.PI / 180
+        const half_height = Math.tan(theta/2)
+        const half_width = aspect * half_height
+        const w = vec_unit(vec_sub(look_from, look_at))
+        const u = vec_unit(vec_cross(vup, w))
+        const v = vec_cross(w, u)
+        return {
+            lower_left_corner:
+            vec_sub(look_from,
+                    vec_mul_num(vec_sum(vec_mul_num(u, half_width),
+                                        vec_sum(vec_mul_num(v, half_height),
+                                                w)),
+                                focus_dist)),
+            horizontal: vec_mul_num(u, 2*half_width*focus_dist),
+            vertical: vec_mul_num(v, 2*half_height*focus_dist),
+            origin:  look_from,
+            lens_radius, u, v
+        }
+}
+
+
+const random_in_unit_disk = () => {
+    let p
+    do {
+        p = vec_mul_num(
+            vec_sub([Math.random(), Math.random(), 0], [1, 1, 0]),
+            2)
+    } while (vec_dot(p, p) >= 1)
+    return p
+}
+
+
+const get_ray_complete = (camera, u, v) => {
+    const rd = vec_mul_num(random_in_unit_disk(), camera.lens_radius)
+    const offset = vec_sum(
+        vec_mul_num(camera.u, rd[0]),
+        vec_mul_num(camera.v, rd[1]))
+    const direction = vec_sum(
+        camera.lower_left_corner,
+        vec_sub(
+            vec_sum(
+                vec_mul_num(camera.horizontal, u),
+                vec_mul_num(camera.vertical, v)),
+            vec_sum(camera.origin, offset)))
+    const ray = {origin: vec_sum(camera.origin, offset),
+                 direction}
+    return ray
+}
+
 
 // boot
 
@@ -565,9 +623,23 @@ const start = () => {
     
     //hello_world_6('ray1', fov_camera(90, width/height), 20, (ray) => color_8(ray, world_camera))
 
+    /*
     hello_world_6('ray1',
-                  standard_camera([-2, 2, 1], [0, 0, -1],
+                  moveable_camera([-2, 2, 1], [0, 0, -1],
                                   [0, 1, 0],
                                   90, width/height),  // 90 or 40
                   20, (ray) => color_8(ray, world_dielectric))
+    */
+
+    const look_from = [3, 2, 2]
+    const look_at = [0, 0, -1]
+    const dist_to_focus = vec_length(vec_sub(look_from, look_at))
+    const aperture = 2
+    hello_world_6('ray1',
+                  complete_camera(look_from, look_at,
+                                  [0, 1, 0],
+                                  20, width/height, aperture, dist_to_focus),
+                  20, (ray) => color_8(ray, world_dielectric),
+                 get_ray_complete)
+
 }
