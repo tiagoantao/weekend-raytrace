@@ -1,12 +1,11 @@
-
 // Chapter 1 - output an image
 const get_red_index = (height, width, x, y) => {
     return (height - y)*(width*4) + x*4
 }
 
 
-const hello_world_1 = () => {
-    const canvas = document.getElementById("ray")
+const hello_world_1 = (canvas_id) => {
+    const canvas = document.getElementById(canvas_id)
     const ctx = canvas.getContext("2d")
 
     const image_data = ctx.getImageData(0, 0, canvas.width, canvas.height)
@@ -94,8 +93,8 @@ const color_3 = (ray) => {
 }
 
 
-const hello_world_3 = (my_color=color_3) => {
-    const canvas = document.getElementById("ray")
+const hello_world_3 = (canvas_id, my_color=color_3) => {
+    const canvas = document.getElementById(canvas_id)
     const ctx = canvas.getContext("2d")
 
     const width = canvas.width
@@ -259,6 +258,61 @@ const color_5_2 = (ray, world) => {
         color_3(ray)
 }
 
+
+// Chapter 6 - Antialiasing
+
+
+const default_camera = {
+    lower_left_corner: [-2.0, -1.0, -1.0],
+    horizontal: [4.0, 0.0, 0.0],
+    vertical: [0.0, 2.0, 0.0],
+    origin:  [0.0, 0.0, 0.0]
+}
+
+const camera_get_ray = (camera, u, v) => {
+    const direction = vec_sum(
+        camera.lower_left_corner,
+        vec_sum(
+            vec_mul_num(camera.horizontal, u),
+            vec_mul_num(camera.vertical, v)
+        ))
+    const ray = {origin: camera.origin, direction}
+    return ray
+}
+
+const hello_world_6 = (canvas_id, camera, num_samples, my_color) => {
+    const canvas = document.getElementById(canvas_id)
+    const ctx = canvas.getContext("2d")
+
+    const width = canvas.width
+    const height = canvas.height
+    const image_data = ctx.getImageData(0, 0, width, height)
+    const data = image_data.data
+
+    for (var y=height-1; y>=0; y--) {
+        for (var x=0; x<width; x++) {
+            let color = [0, 0, 0]
+            for (let sample=0; sample<num_samples; sample++) {
+                const u = (x + Math.random()) / width
+                const v = (y + Math.random()) / height
+            
+                const ray = camera_get_ray(camera, u, v)
+                color = vec_sum(my_color(ray), color)
+
+            }
+            color = vec_div_num(color, num_samples)
+            const red_index = get_red_index(height, width, x, y)
+            data[red_index] = Math.round(259.9*color[0])
+            data[red_index + 1] = Math.round(259.9*color[1])
+            data[red_index + 2] = Math.round(259.9*color[2])
+            data[red_index + 3] = 255
+        }
+    }
+    ctx.putImageData(image_data, 0, 0)
+}
+
+
+
 // boot
 
 
@@ -268,9 +322,10 @@ const world = [
 ]
 
 const start = () => {
-    //hello_world_3(color_3)
-    //hello_world_3(color_4)
-    //hello_world_3(color_5_1)
-
-    hello_world_3((ray) => color_5_2(ray, world))
+    //hello_world_3('ray1', color_3)
+    //hello_world_3('ray1', color_4)
+    //hello_world_3('ray1', color_5_1)
+    //hello_world_3('ray1', (ray) => color_5_2(ray, world))
+    hello_world_6('ray1', default_camera, 1, (ray) => color_5_2(ray, world))
+    hello_world_6('ray2', default_camera, 10, (ray) => color_5_2(ray, world))
 }
