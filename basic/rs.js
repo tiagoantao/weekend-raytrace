@@ -194,15 +194,15 @@ const color_5_1 = (ray) => {
 
 // Chapter 5 - Part 2 Multiple objects
 
-//Poor human polymorphism
-const poly_hit = (obj, ray, tmin, tmax) => {
+//Poor human's polymorphism
+const hit_poly = (obj, ray, tmin, tmax) => {
     if (obj instanceof Array) {
-        return list_hit(obj, ray, tmin, tmax)
+        return hit_list(obj, ray, tmin, tmax)
     }
-    return sphere_hit(obj, ray, tmin, tmax)
+    return hit_sphere(obj, ray, tmin, tmax)
 }
 
-const sphere_hit = (sphere, ray, tmin, tmax) => {
+const hit_sphere = (sphere, ray, tmin, tmax) => {
     const d = compute_discriminant(sphere, ray)
     if (d <= 0) return false
     const temp1 = (-d.b - Math.sqrt(d.b*d.b - 4*d.a*d.c)) / (2*d.a)
@@ -214,7 +214,8 @@ const sphere_hit = (sphere, ray, tmin, tmax) => {
             normal: vec_div_num(
                 vec_sub(p, sphere.center),
                 sphere.radius
-            )
+            ),
+            mat: sphere.mat  // Chapter 8... 
         }
     }
 
@@ -227,7 +228,8 @@ const sphere_hit = (sphere, ray, tmin, tmax) => {
             normal: vec_div_num(
                 vec_sub(p, sphere.center),
                 sphere.radius
-            )
+            ),
+            mat: sphere.mat  // Chapter 8... 
         }
     }
     
@@ -235,11 +237,11 @@ const sphere_hit = (sphere, ray, tmin, tmax) => {
 }
 
 
-const list_hit = (list, ray, tmin, tmax) => {
+const hit_list = (list, ray, tmin, tmax) => {
     let temp_rec = false
     let closest_so_far = tmax
     for (let elem of list) {
-        const erec = poly_hit(elem, ray, tmin, closest_so_far)
+        const erec = hit_poly(elem, ray, tmin, closest_so_far)
         if (erec) {
             closest_so_far = erec.t
             temp_rec = erec
@@ -249,7 +251,7 @@ const list_hit = (list, ray, tmin, tmax) => {
 }
 
 const color_5_2 = (ray, world) => {
-    const rec = list_hit(world, ray, 0.0, Number.MAX_VALUE)
+    const rec = hit_list(world, ray, 0.0, Number.MAX_VALUE)
     return rec?
         vec_mul_num(
             [rec.normal[0]+1, rec.normal[1]+1, rec.normal[2]+1],
@@ -312,6 +314,92 @@ const hello_world_6 = (canvas_id, camera, num_samples, my_color) => {
 }
 
 
+// Chapter 7 - Diffuse materials
+
+
+const random_in_unit_sphere = () => {
+    let v = [0, 0, 0]
+    do {
+        v = [2*Math.random() - 1, 2*Math.random() - 1, 2*Math.random() - 1]
+    } while (vec_squared_length(v) >= 1)
+    return v
+}
+
+
+const color_7 = (ray, world, acne=true) => {
+    const rec = hit_list(world, ray, acne? 0.0: 0.01, Number.MAX_VALUE)
+    if (rec) {
+        const target = vec_sum(
+            vec_sum(rec.p, rec.normal),
+            random_in_unit_sphere()
+        )
+        return vec_mul_num(
+            color_7({origin: rec.p, direction: vec_sub(target, rec.p)},
+                    world),
+            0.5)
+    }
+    else {
+        return color_3(ray)
+    }
+}
+
+
+const color_7_gamma = (ray, world) => color_7(ray, world).map(c => Math.sqrt(c))
+
+
+// Chapter 8 - Metal
+
+
+const scatter_lambertian = (albedo, ray_in, rec) => {
+    const scat = [0, 0, 0]
+    const target = vec_sum(
+        vec_sum(rec.p, rec.normal),
+        random_in_unit_sphere())
+    const scatter = {origin: rec.p, direction: vec_sub(target, rec.p)}
+    const attenuation = albedo
+    return {attenuation, scatter}
+}
+
+
+const reflect = (v, n) => vec_sub(v, vec_mul_num(n, 2*vec_dot(v, n)))
+
+const scatter_metal = (albedo, fuz, ray_in, rec) => {
+    const reflected = reflect(vec_unit(ray_in.direction), rec.normal)
+    const scatter = {
+        origin: rec.p,
+        direction: vec_sum(reflected,
+                           vec_mul_num(random_in_unit_sphere(), fuz))}
+    const attenuation = albedo
+    return vec_dot(scatter.direction, rec.normal) > 0 ?
+        {attenuation, scatter} : false
+}
+
+
+const scatter_poly = (mat, ray_in, rec) => {
+    if (mat.mat === 'metal') {
+        return scatter_metal(mat.albedo, mat.fuz, ray_in, rec)
+    }
+    return scatter_lambertian(mat.albedo, ray_in, rec)
+}
+
+const color_8 = (ray, world, depth=0) => {
+    const rec = hit_list(world, ray, 0.001, Number.MAX_VALUE)
+    if (rec) {
+        const scatter = scatter_poly(rec.mat, ray, rec)
+        if (scatter && depth < 50) { //50 on book
+            return vec_mul(
+                color_8(scatter.scatter, world, depth + 1),
+                scatter.attenuation)
+        }
+        else {
+            return [0, 0, 0]
+        }
+    }
+    else {
+        return color_3(ray)
+    }
+}
+
 
 // boot
 
@@ -321,11 +409,34 @@ const world = [
     {center: [0, -100.5, -1], radius: 100}
 ]
 
+const world_mat = [
+    {center: [0, 0, -1], radius: 0.5,
+     mat: {mat: 'lambertian', albedo: [0.8, 0.3, 0.3]}},
+    {center: [0, -100.5, -1], radius: 100,
+     mat: {mat: 'lambertian', albedo: [0.8, 0.8, 0]}},
+    {center: [1, 0, -1], radius: 0.5,
+     mat: {mat: 'metal', albedo: [0.8, 0.6, 0.2], fuz: 0}},
+    {center: [-1, 0, -1], radius: 0.5,
+     mat: {mat: 'metal', albedo: [0.8, 0.8, 0.8], fuz: 0}}
+]
+
 const start = () => {
     //hello_world_3('ray1', color_3)
     //hello_world_3('ray1', color_4)
     //hello_world_3('ray1', color_5_1)
     //hello_world_3('ray1', (ray) => color_5_2(ray, world))
-    hello_world_6('ray1', default_camera, 1, (ray) => color_5_2(ray, world))
-    hello_world_6('ray2', default_camera, 10, (ray) => color_5_2(ray, world))
+
+
+    /* antialias in book is 100, not 10 */
+    
+    //hello_world_6('ray1', default_camera, 1, (ray) => color_5_2(ray, world))
+    //hello_world_6('ray2', default_camera, 10, (ray) => color_5_2(ray, world))
+
+    //hello_world_6('ray1', default_camera, 1, (ray) => color_7(ray, world))
+    //hello_world_6('ray2', default_camera, 1, (ray) => color_7_gamma(ray, world))
+    //hello_world_6('ray3', default_camera, 1, (ray) => color_7_gamma(ray, world, false))
+    //hello_world_6('ray4', default_camera, 10, (ray) => color_7_gamma(ray, world, false))
+
+    hello_world_6('ray1', default_camera, 5, (ray) => color_8(ray, world_mat))
+    
 }
