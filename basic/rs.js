@@ -379,6 +379,9 @@ const scatter_poly = (mat, ray_in, rec) => {
     if (mat.mat === 'metal') {
         return scatter_metal(mat.albedo, mat.fuz, ray_in, rec)
     }
+    else if (mat.mat === 'dielectric') {
+        return scatter_dielectric(mat.ri, ray_in, rec)
+    }
     return scatter_lambertian(mat.albedo, ray_in, rec)
 }
 
@@ -401,6 +404,60 @@ const color_8 = (ray, world, depth=0) => {
 }
 
 
+// Chapter 9 - Dielectrics
+
+const refract = (v, n, ni_over_nt) => {
+    const uv = vec_unit(v)
+    const dt = vec_dot(uv, n)
+    const discriminant = 1 - ni_over_nt*ni_over_nt*(1 - dt*dt)
+    //console.log(ni_over_nt, uv, dt, n, discriminant)
+    return discriminant > 0 ?
+        vec_sub(
+            vec_mul_num(
+                vec_sub(uv, vec_mul_num(n, dt)), ni_over_nt),
+            vec_mul_num(n, Math.sqrt(discriminant)))
+        :
+        false
+}
+
+
+const schlick = (cosine, ri) => {
+    const r0 = (1-ri) / (1+ri)
+    const r02 = r0*r0
+    return r02 * (1-r02)*Math.pow((1 - cosine), 5)
+}
+
+
+const scatter_dielectric = (ri, ray_in, rec) => {
+    let outward_normal
+    let ni_over_nt
+    const attenuation = [1, 1, 1]
+    let cosine
+    const reflected = reflect(ray_in.direction, rec.normal)
+
+    if (vec_dot(ray_in.direction, rec.normal) > 0) {
+        outward_normal = rec.normal.map(c => -c)
+        ni_over_nt = ri
+        cosine = ri * vec_dot(ray_in.direction, rec.normal) / vec_length(ray_in.direction)
+    }
+    else {
+        outward_normal = rec.normal
+        ni_over_nt = 1.0 / ri
+        cosine = -vec_dot(ray_in.direction, rec.normal) / vec_length(ray_in.direction)
+    }
+    const refracted = refract(ray_in.direction, outward_normal, ni_over_nt)
+    //console.log(refracted)
+    const reflect_prob = refracted ?
+          schlick(cosine, ri)
+          :
+          1
+    //console.log(refracted, reflect_prob)
+    return Math.random() < reflect_prob ?
+        {attenuation, scatter: {origin: rec.p, direction: reflected}}
+        :
+        {attenuation, scatter: {origin: rec.p, direction: refracted}}
+}
+
 // boot
 
 
@@ -420,6 +477,20 @@ const world_mat = [
      mat: {mat: 'metal', albedo: [0.8, 0.8, 0.8], fuz: 0}}
 ]
 
+
+const world_dielectric = [
+    {center: [0, 0, -1], radius: 0.5,
+     mat: {mat: 'lambertian', albedo: [0.1, 0.2, 0.5]}},
+    {center: [0, -100.5, -1], radius: 100,
+     mat: {mat: 'lambertian', albedo: [0.8, 0.8, 0]}},
+    {center: [1, 0, -1], radius: 0.5,
+     mat: {mat: 'metal', albedo: [0.8, 0.6, 0.2], fuz: 0}},
+    {center: [-1, 0, -1], radius: 0.5,
+    mat: {mat: 'dielectric', ri: 1.5}},
+    {center: [-1, 0, -1], radius: -0.45,
+     mat: {mat: 'dielectric', ri: 1.5}}
+]
+
 const start = () => {
     //hello_world_3('ray1', color_3)
     //hello_world_3('ray1', color_4)
@@ -437,6 +508,8 @@ const start = () => {
     //hello_world_6('ray3', default_camera, 1, (ray) => color_7_gamma(ray, world, false))
     //hello_world_6('ray4', default_camera, 10, (ray) => color_7_gamma(ray, world, false))
 
-    hello_world_6('ray1', default_camera, 5, (ray) => color_8(ray, world_mat))
+    //hello_world_6('ray1', default_camera, 5, (ray) => color_8(ray, world_mat))
+
+    hello_world_6('ray1', default_camera, 20, (ray) => color_8(ray, world_dielectric))
     
 }
