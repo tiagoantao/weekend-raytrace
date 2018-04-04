@@ -264,14 +264,14 @@ const color_5_2 = (ray, world) => {
 // Chapter 6 - Antialiasing
 
 
-const default_camera = {
+const simple_camera = {
     lower_left_corner: [-2.0, -1.0, -1.0],
     horizontal: [4.0, 0.0, 0.0],
     vertical: [0.0, 2.0, 0.0],
     origin:  [0.0, 0.0, 0.0]
 }
 
-const camera_get_ray = (camera, u, v) => {
+const get_ray = (camera, u, v) => {
     const direction = vec_sum(
         camera.lower_left_corner,
         vec_sum(
@@ -298,7 +298,7 @@ const hello_world_6 = (canvas_id, camera, num_samples, my_color) => {
                 const u = (x + Math.random()) / width
                 const v = (y + Math.random()) / height
             
-                const ray = camera_get_ray(camera, u, v)
+                const ray = get_ray(camera, u, v)
                 color = vec_sum(my_color(ray), color)
 
             }
@@ -458,6 +458,21 @@ const scatter_dielectric = (ri, ray_in, rec) => {
         {attenuation, scatter: {origin: rec.p, direction: refracted}}
 }
 
+
+// Chapter 10 - Positionable camera
+
+const standard_camera = (vfov, aspect) => {
+    const theta = vfov * Math.PI / 180
+    const half_height = Math.tan(theta/2)
+    const half_width = aspect * half_height
+    return {
+        lower_left_corner: [-half_width, -half_height, -1.0],
+        horizontal: [2*half_width, 0.0, 0.0],
+        vertical: [0.0, 2*half_height, 0.0],
+        origin:  [0.0, 0.0, 0.0]
+    }
+}
+
 // boot
 
 
@@ -491,6 +506,15 @@ const world_dielectric = [
      mat: {mat: 'dielectric', ri: 1.5}}
 ]
 
+const _R = Math.cos(Math.PI / 4)
+const world_camera_1 = [
+    {center: [-_R, 0, -1], radius: _R,
+     mat: {mat: 'lambertian', albedo: [0, 0, 01]}},
+    {center: [_R, 0, -1], radius: _R,
+     mat: {mat: 'lambertian', albedo: [1, 0, 0]}}
+]
+
+
 const start = () => {
     //hello_world_3('ray1', color_3)
     //hello_world_3('ray1', color_4)
@@ -500,16 +524,23 @@ const start = () => {
 
     /* antialias in book is 100, not 10 */
     
-    //hello_world_6('ray1', default_camera, 1, (ray) => color_5_2(ray, world))
-    //hello_world_6('ray2', default_camera, 10, (ray) => color_5_2(ray, world))
+    //hello_world_6('ray1', simple_camera, 1, (ray) => color_5_2(ray, world))
+    //hello_world_6('ray2', simple_camera, 10, (ray) => color_5_2(ray, world))
 
-    //hello_world_6('ray1', default_camera, 1, (ray) => color_7(ray, world))
-    //hello_world_6('ray2', default_camera, 1, (ray) => color_7_gamma(ray, world))
-    //hello_world_6('ray3', default_camera, 1, (ray) => color_7_gamma(ray, world, false))
-    //hello_world_6('ray4', default_camera, 10, (ray) => color_7_gamma(ray, world, false))
+    //hello_world_6('ray1', simple_camera, 1, (ray) => color_7(ray, world))
+    //hello_world_6('ray2', simple_camera, 1, (ray) => color_7_gamma(ray, world))
+    //hello_world_6('ray3', simple_camera, 1, (ray) => color_7_gamma(ray, world, false))
+    //hello_world_6('ray4', simple_camera, 10, (ray) => color_7_gamma(ray, world, false))
 
-    //hello_world_6('ray1', default_camera, 5, (ray) => color_8(ray, world_mat))
+    //hello_world_6('ray1', simple_camera, 5, (ray) => color_8(ray, world_mat))
 
-    hello_world_6('ray1', default_camera, 20, (ray) => color_8(ray, world_dielectric))
+    //hello_world_6('ray1', simple_camera, 20, (ray) => color_8(ray, world_dielectric))
+
+    const canvas_camera_1 = 'ray1'
+    const canvas = document.getElementById(canvas_camera_1)
+    const ctx = canvas.getContext("2d")
+    const width = canvas.width
+    const height = canvas.height
+    hello_world_6('ray1', standard_camera(90, width/height), 20, (ray) => color_8(ray, world_camera_1))
     
 }
