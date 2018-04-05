@@ -329,7 +329,7 @@ const random_in_unit_sphere = () => {
 
 
 const color_7 = (ray, world, acne=true) => {
-    const rec = hit_list(world, ray, acne? 0.0: 0.01, Number.MAX_VALUE)
+    const rec = hit_list(world, ray, acne? 0.0: 0.001, Number.MAX_VALUE)
     if (rec) {
         const target = vec_sum(
             vec_sum(rec.p, rec.normal),
@@ -346,7 +346,7 @@ const color_7 = (ray, world, acne=true) => {
 }
 
 
-const color_7_gamma = (ray, world) => color_7(ray, world).map(c => Math.sqrt(c))
+const color_7_gamma = (ray, world, acne=true) => color_7(ray, world, acne).map(c => Math.sqrt(c))
 
 
 // Chapter 8 - Metal
@@ -652,41 +652,67 @@ const do_random_scene = (canvas, width, height) => {
                  get_ray_complete)
 }
 
-const start = () => {
-    //hello_world_3('ray1', color_3)
-    //hello_world_3('ray1', color_4)
-    //hello_world_3('ray1', color_5_1)
-    //hello_world_3('ray1', (ray) => color_5_2(ray, world))
+
+const render_examples = (examples) => {
+    if (examples.length === 0) return
+    examples[0]()
+    setTimeout(render_examples, 1000, examples.slice(1))
+}
 
 
-    /* antialias in book is 100, not 10 */
-    
-    //hello_world_6('ray1', simple_camera, 1, (ray) => color_5_2(ray, world))
-    //hello_world_6('ray2', simple_camera, 10, (ray) => color_5_2(ray, world))
-
-    //hello_world_6('ray1', simple_camera, 1, (ray) => color_7(ray, world))
-    //hello_world_6('ray2', simple_camera, 1, (ray) => color_7_gamma(ray, world))
-    //hello_world_6('ray3', simple_camera, 1, (ray) => color_7_gamma(ray, world, false))
-    //hello_world_6('ray4', simple_camera, 10, (ray) => color_7_gamma(ray, world, false))
-
-    //hello_world_6('ray1', simple_camera, 5, (ray) => color_8(ray, world_mat))
-
-    //hello_world_6('ray1', simple_camera, 20, (ray) => color_8(ray, world_dielectric))
-
-    const canvas_camera_1 = 'ray1'
-    const canvas = document.getElementById(canvas_camera_1)
+const get_ratio = (cname) => {
+    const canvas = document.getElementById(cname)
     const ctx = canvas.getContext("2d")
     const width = canvas.width
     const height = canvas.height
+    return width/height
+}
+
+
+const start = () => {
+    /* antialias in book is 100, not 10 */
+    const fov_ratio = get_ratio('fov')
+    const moveable_ratio = get_ratio('moveable')
+    const complete_ratio = get_ratio('complete')
+    const final_ratio = get_ratio('final')
     
-    //hello_world_6('ray1', fov_camera(90, width/height), 20, (ray) => color_8(ray, world_camera))
+    examples = [
+        () => hello_world_1('pic'),
+        () => hello_world_3('background', color_3),
+        () => hello_world_3('sphere', color_4),
+        () => hello_world_3('normals', color_5_1),
+        () => hello_world_3('multiple', (ray) => color_5_2(ray, world)),
+        () => hello_world_6('anti1', simple_camera, 1, (ray) => color_5_2(ray, world)),
+        () => hello_world_6('anti2', simple_camera, 10, (ray) => color_5_2(ray, world)),
+        () => hello_world_6('diffuse', simple_camera, 10, (ray) => color_7(ray, world)),
+        () => hello_world_6('gamma', simple_camera, 30, (ray) => color_7_gamma(ray, world)),
+        () => hello_world_6('acne', simple_camera, 30, (ray) => color_7_gamma(ray, world, false)),
+        () => hello_world_6('metal', simple_camera, 5, (ray) => color_8(ray, world_mat)),
+        () => hello_world_6('dielectrics', simple_camera, 20, (ray) => color_8(ray, world_dielectric)),
+        () => hello_world_6('fov', fov_camera(90, fov_ratio), 20, (ray) => color_8(ray, world_camera)),
+        () => hello_world_6('moveable',
+                            moveable_camera([-2, 2, 1], [0, 0, -1],
+                                            [0, 1, 0],
+                                            90, moveable_ratio),  // 90 or 40
+                            20, (ray) => color_8(ray, world_dielectric)),
+        () => hello_world_6('complete',
+                            complete_camera([3, 2, 2], [0, 0, -1],
+                                            [0, 1, 0],
+                                            20, complete_ratio, 2,
+                                            vec_length(vec_sub([3, 2, 2],
+                                                              [ 0, 0, -1]))),
+                            20, (ray) => color_8(ray, world_dielectric),
+                            get_ray_complete)
+
+    ]
+    render_examples(examples)
+
+
+
+    
+
 
     /*
-    hello_world_6('ray1',
-                  moveable_camera([-2, 2, 1], [0, 0, -1],
-                                  [0, 1, 0],
-                                  90, width/height),  // 90 or 40
-                  20, (ray) => color_8(ray, world_dielectric))
     */
 
     /*
@@ -702,6 +728,6 @@ const start = () => {
                  get_ray_complete)
     */
 
-    do_random_scene('ray1', width, height)
+    //do_random_scene('ray1', width, height)
     
 }

@@ -3,11 +3,83 @@
   <head>
     <script src="rs.js"></script>
   </head>
-  <body onload="start()">
-    <canvas id="ray1" width="500" height="300" style="border:0px solid #000000;"></canvas>
-    <canvas id="ray2" width="500" height="300" style="border:0px solid #000000;"></canvas>
-    <canvas id="ray3" width="500" height="300" style="border:0px solid #000000;"></canvas>
-    <canvas id="ray4" width="500" height="300" style="border:0px solid #000000;"></canvas>
+  <body>
+    <h1>Raytracing in one weekend in JavaScript</h1>
+
+    <p>This is a JavaScript implementatition of a ray tracer inspired
+    on Peter Shirley's book
+    <a href="https://in1weekend.blogspot.pt/2016/01/ray-tracing-in-one-weekend.html">Raytracing in one weekend</a>.</p>
+
+    <p><b>The ray tracer will run in your browser!</b></p>
+
+    <p>The code is <a href="https://github.com/tiagoantao/weekend-raytrace">available on github</a>.</p>
+
+    <h2>Caveats</h2>
+
+    <p>The biggest caveat is that this page will be clunky
+    slow. <b>Your browser might complain that the page is
+    non-responsive, just wait</b>. I also have reduced anti-aliasing
+    in some cases.</p>
+
+
+    <button onclick="start()"><h2>Click here to start</h2></button>
+
+    
+    <h2>Chapter 1</h2>
+    <p>Here we just test our ability to write to a HTML 5 canvas.</p>
+    
+    <canvas id="pic" width="500" height="300" style="border:2px solid #000000;"></canvas>
+
+    <h2>Raytracing a background</h2>
+    
+    <canvas id="background" width="500" height="300" style="border:2px solid #000000;"></canvas>
+
+    <h2>A sphere</h2>
+    
+    <canvas id="sphere" width="500" height="300" style="border:2px solid #000000;"></canvas>
+
+    <h2>Surface normals</h2>
+    
+    <canvas id="normals" width="500" height="300" style="border:2px solid #000000;"></canvas>
+
+    <h2>Multiple objects</h2>
+    
+    <canvas id="multiple" width="500" height="300" style="border:2px solid #000000;"></canvas>
+
+    <h2>Antialiasing</h2>
+    <h3>No Antialiasing</h3>
+    <canvas id="anti1" width="500" height="300" style="border:2px solid #000000;"></canvas>
+    <h3>10 rays</h3>
+    <canvas id="anti2" width="500" height="300" style="border:2px solid #000000;"></canvas>
+    <h2>Diffuse materials</h2>
+    <canvas id="diffuse" width="500" height="300" style="border:2px solid #000000;"></canvas>
+    <h3>Gamma correction</h3>
+    <canvas id="gamma" width="500" height="300" style="border:2px solid #000000;"></canvas>
+    <h3>Acne removal</h3>
+    <canvas id="acne" width="500" height="300" style="border:2px solid #000000;"></canvas>
+
+    <h2>Metal</h2>
+    <canvas id="metal" width="500" height="300" style="border:2px solid #000000;"></canvas>
+
+    <h2>Dielectrics</h2>
+    <canvas id="dielectrics" width="500" height="300" style="border:2px solid #000000;"></canvas>
+
+
+    <h2>Cameras</h2>
+    <h3>Field Of View</h3>
+    <canvas id="fov" width="500" height="300" style="border:2px solid #000000;"></canvas>
+    <h3>Moveable camera</h3>
+    <canvas id="moveable" width="500" height="300" style="border:2px solid #000000;"></canvas>
+    <h3>Complete camera</h3>
+    <canvas id="complete" width="500" height="300" style="border:2px solid #000000;"></canvas>
+    <h2>The title image</h2>
+    <p>This will be slow, so it is not automatically generated. You have to
+    click the button to do it</p>
+    <button onclick="do_random_scene('ray1', 500, 300)">Render final image</button>
+    <br/>
+    <canvas id="final" width="500" height="300" style="border:2px solid #000000;"></canvas>
+
+
   </body>
   
 </html>
