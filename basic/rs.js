@@ -552,6 +552,49 @@ const get_ray_complete = (camera, u, v) => {
 }
 
 
+// Cover
+
+
+const random_scene = () => {
+    const hits = []
+    hits.push({center: [0, -1000, 0], radius: 1000,
+               mat: {mat: 'lambertian', albedo: [0.5, 0.5, 0.5]}})
+    for (let a=-11; a<11; a++) {
+        for (let b=-11; b<11; b++) {
+            if (Math.random() > 0.3) continue // way to much, reduce
+            const choose_mat = Math.random()
+            const center = [a+0.9*Math.random(), 0.2, b+0.9*Math.random()]
+            let mat
+            if (vec_length(vec_sub(center, [4, 0.2, 0])) > 0.9) {
+                if (choose_mat < 0.8) {
+                    mat = {mat: 'lambertian',
+                           albedo: [1, 1, 1].map(c => Math.random()*Math.random())}
+                }
+                else if (choose_mat < 0.95) {
+                    mat = {mat: 'metal', fuz: 0.5*Math.random(),
+                           albedo: [1, 1, 1].map(c => 0.5*(c + Math.random()))}
+                }
+                else {
+                    mat = {mat: 'dielectric', ri: 1.5}
+                }
+                hits.push({center, radius: 0.2, mat})
+            }
+        }
+    }
+    hits.push({center: [-1, 0.2, 1], radius: 0.2,
+               mat: {mat: 'dielectric', ri: 1.5}})    
+    hits.push({center: [1, 0.2, -1], radius: 0.2,
+               mat: {mat: 'dielectric', ri: 1.5}})    
+    hits.push({center: [0, 1, 0], radius: 1,
+               mat: {mat: 'dielectric', ri: 1.5}})
+    hits.push({center: [-4, 1, 0], radius: 1,
+               mat: {mat: 'lambertian', albedo: [0.4, 0.2, 0.1]}})
+    hits.push({center: [4, 1, 0], radius: 1,
+               mat: {mat: 'metal', fuz: 0, albedo: [0.7, 0.6, 0.5]}})
+    return hits
+}
+
+
 // boot
 
 
@@ -594,6 +637,21 @@ const world_camera = [
 ]
 
 
+const do_random_scene = (canvas, width, height) => {
+    //Anti alias of 5
+    const look_from = [13, 2, 3]
+    const look_at = [0, 0, 0]
+    const dist_to_focus = 10
+    const aperture = 0.1
+    const scene = random_scene()
+    hello_world_6(canvas,
+                  complete_camera(look_from, look_at,
+                                  [0, 1, 0],
+                                  20, width/height, aperture, dist_to_focus),
+                  10, (ray) => color_8(ray, scene),
+                 get_ray_complete)
+}
+
 const start = () => {
     //hello_world_3('ray1', color_3)
     //hello_world_3('ray1', color_4)
@@ -631,6 +689,7 @@ const start = () => {
                   20, (ray) => color_8(ray, world_dielectric))
     */
 
+    /*
     const look_from = [3, 2, 2]
     const look_at = [0, 0, -1]
     const dist_to_focus = vec_length(vec_sub(look_from, look_at))
@@ -641,5 +700,8 @@ const start = () => {
                                   20, width/height, aperture, dist_to_focus),
                   20, (ray) => color_8(ray, world_dielectric),
                  get_ray_complete)
+    */
 
+    do_random_scene('ray1', width, height)
+    
 }
